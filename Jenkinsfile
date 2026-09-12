@@ -4,7 +4,7 @@ pipeline {
 
     parameters {
         choice(
-            name: 'TF_WORKSPACE',
+            name: 'WORKSPACE_NAME',
             choices: ['dev', 'stg', 'prod'],
             description: 'Select Terraform workspace'
         )
@@ -20,7 +20,7 @@ pipeline {
 
         stage('Select Workspace') {
             steps {
-                sh 'terraform workspace select ${TF_WORKSPACE}'
+                sh 'terraform workspace select ${WORKSPACE_NAME}'
             }
         }
 
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 sh '''
                     terraform plan \
-                    -var-file="${TF_WORKSPACE}.tfvars" \
+                    -var-file="${WORKSPACE_NAME}.tfvars" \
                     -out=tfplan
                 '''
             }
@@ -38,7 +38,7 @@ pipeline {
             steps {
                 script {
                     def decision = input(
-                        message: "Approve Terraform Apply for ${TF_WORKSPACE}?",
+                        message: "Approve Terraform Apply for ${WORKSPACE_NAME}?",
                         parameters: [
                             choice(
                                 name: 'DECISION',
@@ -49,7 +49,7 @@ pipeline {
                     )
 
                     if (decision == 'Deny') {
-                        error("Terraform Apply denied for workspace ${TF_WORKSPACE}.")
+                        error("Terraform Apply denied for workspace ${WORKSPACE_NAME}.")
                     }
                 }
             }
@@ -65,7 +65,7 @@ pipeline {
     post {
 
         success {
-            echo "Terraform pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER} completed successfully for workspace ${TF_WORKSPACE}."
+            echo "Terraform pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER} completed successfully for workspace ${WORKSPACE_NAME}."
         }
 
         failure {
@@ -76,7 +76,7 @@ Terraform pipeline failed.
 
 Pipeline: ${env.JOB_NAME}
 Build: #${env.BUILD_NUMBER}
-Workspace: ${TF_WORKSPACE}
+Workspace: ${WORKSPACE_NAME}
 
 Please check the Jenkins console log for the failure.
 
