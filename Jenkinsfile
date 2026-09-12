@@ -4,7 +4,7 @@ pipeline {
 
     parameters {
         choice(
-            name: 'WORKSPACE_NAME',
+            name: 'TF_WORKSPACE',
             choices: ['dev', 'stg', 'prod'],
             description: 'Select Terraform workspace'
         )
@@ -20,7 +20,7 @@ pipeline {
 
         stage('Select Workspace') {
             steps {
-                sh 'terraform workspace select ${WORKSPACE_NAME}'
+                sh 'terraform workspace select ${TF_WORKSPACE}'
             }
         }
 
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 sh '''
                     terraform plan \
-                    -var-file="${WORKSPACE_NAME}.tfvars" \
+                    -var-file="${TF_WORKSPACE}.tfvars" \
                     -out=tfplan
                 '''
             }
@@ -38,7 +38,7 @@ pipeline {
             steps {
                 script {
                     def decision = input(
-                        message: "Approve Terraform Apply for ${WORKSPACE_NAME}?",
+                        message: "Approve Terraform Apply for ${TF_WORKSPACE}?",
                         parameters: [
                             choice(
                                 name: 'DECISION',
@@ -49,7 +49,7 @@ pipeline {
                     )
 
                     if (decision == 'Deny') {
-                        error("Terraform Apply denied for workspace ${WORKSPACE_NAME}.")
+                        error("Terraform Apply denied for workspace ${TF_WORKSPACE}.")
                     }
                 }
             }
@@ -76,7 +76,7 @@ Terraform pipeline failed.
 
 Pipeline: ${env.JOB_NAME}
 Build: #${env.BUILD_NUMBER}
-Workspace: ${WORKSPACE_NAME}
+Workspace: ${TF_WORKSPACE}
 
 Please check the Jenkins console log for the failure.
 
