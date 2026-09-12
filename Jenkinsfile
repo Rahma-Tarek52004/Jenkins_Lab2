@@ -1,4 +1,3 @@
-
 pipeline {
 
     agent any
@@ -37,10 +36,22 @@ pipeline {
 
         stage('Approval') {
             steps {
-                input(
-                    message: "Approve Terraform Apply for ${TF_WORKSPACE}?",
-                    ok: "Approve"
-                )
+                script {
+                    def decision = input(
+                        message: "Approve Terraform Apply for ${TF_WORKSPACE}?",
+                        parameters: [
+                            choice(
+                                name: 'DECISION',
+                                choices: ['Approve', 'Deny'],
+                                description: 'Choose whether to apply the Terraform plan'
+                            )
+                        ]
+                    )
+
+                    if (decision == 'Deny') {
+                        error("Terraform Apply denied for workspace ${TF_WORKSPACE}.")
+                    }
+                }
             }
         }
 
@@ -51,17 +62,16 @@ pipeline {
         }
     }
 
+    post {
 
-post {
+        success {
+            echo "Terraform pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER} completed successfully for workspace ${TF_WORKSPACE}."
+        }
 
-    success {
-        echo "Terraform pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER} completed successfully for workspace ${TF_WORKSPACE}."
-    }
-
-    failure {
-        emailext(
-            subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-            body: """
+        failure {
+            emailext(
+                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                body: """
 Terraform pipeline failed.
 
 Pipeline: ${env.JOB_NAME}
@@ -72,13 +82,10 @@ Please check the Jenkins console log for the failure.
 
 Build URL:
 ${env.BUILD_URL}
-            """,
-            to: 'rahmatarek52004@gmail.com',
-            attachLog: true
-        )
+                """,
+                to: 'rahmatarek52004@gmail.com',
+                attachLog: true
+            )
+        }
     }
 }
-
-
-}
-
