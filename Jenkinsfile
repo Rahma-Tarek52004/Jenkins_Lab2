@@ -1,4 +1,4 @@
-```groovy
+
 pipeline {
 
     agent any
@@ -51,11 +51,17 @@ pipeline {
         }
     }
 
-    post {
-        failure {
-            emailext(
-                subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: """
+
+post {
+
+    success {
+        echo "Terraform pipeline ${env.JOB_NAME} #${env.BUILD_NUMBER} completed successfully for workspace ${TF_WORKSPACE}."
+    }
+
+    failure {
+        emailext(
+            subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
 Terraform pipeline failed.
 
 Pipeline: ${env.JOB_NAME}
@@ -66,11 +72,13 @@ Please check the Jenkins console log for the failure.
 
 Build URL:
 ${env.BUILD_URL}
-                """,
-                to: 'rahmatarek52004@gmail.com',
-                attachLog: true
-            )
-        }
+            """,
+            to: 'rahmatarek52004@gmail.com',
+            attachLog: true
+        )
     }
 }
-```
+
+
+}
+
